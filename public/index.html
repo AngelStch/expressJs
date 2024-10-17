@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Counties Data</title>
+    <style>
+        table {
+            width: 60%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 4px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Counties Data</h1>
+    
+    <button id="loadDataButton">Load Data</button> <!-- Button to load all data -->
+    <button id="fetchAndStoreButton">Fetch and Store Online Data</button> <!-- Fetch and store data -->
+    <button id="fetchAndUpsertButton">Fetch and Upsert Data</button> <!-- New button for upsert functionality -->
+
+    <div>
+        <label for="stateFilter">Filter by State Name:</label>
+        <input type="text" id="stateFilter" placeholder="Enter state name">
+        <button id="filterButton">Filter</button> <!-- Filter button -->
+    </div>
+
+    <table id="countiesTable">
+        <thead>
+            <tr>
+                <th>State Name</th>
+                <th>Population</th> 
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        document.getElementById('fetchAndStoreButton').addEventListener('click', () => {
+            fetch('/api/counties/fetch-and-store')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert(data.message); 
+                })
+                .catch(error => console.error('Error fetching and storing counties:', error));
+        });
+
+        document.getElementById('fetchAndUpsertButton').addEventListener('click', () => {
+            fetch('/api/counties/fetch-and-upsert')  
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert(data.message); 
+                })
+                .catch(error => console.error('Error fetching and upserting counties:', error));
+        });
+
+        document.getElementById('loadDataButton').addEventListener('click', () => {
+            fetch('/api/counties')  
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    populateTable(data); 
+                })
+                .catch(error => console.error('Error fetching counties:', error));
+        });
+
+        document.getElementById('filterButton').addEventListener('click', () => {
+            const stateName = document.getElementById('stateFilter').value.trim();
+            fetch('/api/counties')  
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const filteredData = data.filter(county => 
+                        county.state_name.toLowerCase().includes(stateName.toLowerCase())
+                    );
+                    populateTable(filteredData);
+                })
+                .catch(error => console.error('Error fetching counties:', error));
+        });
+
+        function populateTable(data) {
+            const tableBody = document.getElementById('countiesTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = ''; 
+            data.forEach(county => {
+                const row = tableBody.insertRow();
+                const cell1 = row.insertCell(0);
+                const cell2 = row.insertCell(1);
+                cell1.innerHTML = county.state_name;
+                cell2.innerHTML = county.population;
+            });
+        }
+    </script>
+</body>
+</html>
