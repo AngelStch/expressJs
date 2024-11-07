@@ -14,19 +14,27 @@
             padding: 4px;
             text-align: center;
         }
+        .loading {
+            font-size: 1.2em;
+            color: #0066cc;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <h1>Counties Data</h1>
     
-    <button id="loadDataButton">Load Data</button> <!-- Button to load all data -->
-    <button id="fetchAndStoreButton">Fetch and Store Online Data</button> <!-- Fetch and store data -->
-    <button id="fetchAndUpsertButton">Fetch and Upsert Data</button> <!-- New button for upsert functionality -->
+    <button id="loadDataButton">Load Data</button>
+    <button id="fetchAndStoreButton">Fetch and Store Online Data</button>
+    <button id="fetchAndUpsertButton">Fetch and Upsert Data</button>
 
     <div>
         <label for="stateFilter">Filter by State Name:</label>
         <input type="text" id="stateFilter" placeholder="Enter state name">
-        <button id="filterButton">Filter</button> <!-- Filter button -->
+        <button id="filterButton">Filter</button>
     </div>
 
     <table id="countiesTable">
@@ -39,6 +47,9 @@
         <tbody></tbody>
     </table>
 
+    <p id="loadingMessage" class="loading" style="display: none;">Loading data...</p>
+    <p id="errorMessage" class="error" style="display: none;"></p>
+
     <script>
         document.getElementById('fetchAndStoreButton').addEventListener('click', () => {
             fetch('/api/counties/fetch-and-store')
@@ -49,13 +60,17 @@
                     return response.json();
                 })
                 .then(data => {
-                    alert(data.message); 
+                    alert(data.message);
                 })
-                .catch(error => console.error('Error fetching and storing counties:', error));
+                .catch(error => {
+                    document.getElementById('errorMessage').innerText = 'Error fetching and storing counties: ' + error.message;
+                    document.getElementById('errorMessage').style.display = 'block';
+                    console.error('Error fetching and storing counties:', error);
+                });
         });
 
         document.getElementById('fetchAndUpsertButton').addEventListener('click', () => {
-            fetch('/api/counties/fetch-and-upsert')  
+            fetch('/api/counties/fetch-and-upsert')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
@@ -63,13 +78,18 @@
                     return response.json();
                 })
                 .then(data => {
-                    alert(data.message); 
+                    alert(data.message);
                 })
-                .catch(error => console.error('Error fetching and upserting counties:', error));
+                .catch(error => {
+                    document.getElementById('errorMessage').innerText = 'Error fetching and upserting counties: ' + error.message;
+                    document.getElementById('errorMessage').style.display = 'block';
+                    console.error('Error fetching and upserting counties:', error);
+                });
         });
 
         document.getElementById('loadDataButton').addEventListener('click', () => {
-            fetch('/api/counties')  
+            showLoading(true);
+            fetch('/api/counties')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
@@ -77,14 +97,21 @@
                     return response.json();
                 })
                 .then(data => {
-                    populateTable(data); 
+                    populateTable(data);
+                    showLoading(false);
                 })
-                .catch(error => console.error('Error fetching counties:', error));
+                .catch(error => {
+                    showLoading(false);
+                    document.getElementById('errorMessage').innerText = 'Error fetching counties: ' + error.message;
+                    document.getElementById('errorMessage').style.display = 'block';
+                    console.error('Error fetching counties:', error);
+                });
         });
 
         document.getElementById('filterButton').addEventListener('click', () => {
             const stateName = document.getElementById('stateFilter').value.trim();
-            fetch('/api/counties')  
+            showLoading(true);
+            fetch('/api/counties')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
@@ -92,24 +119,42 @@
                     return response.json();
                 })
                 .then(data => {
-                    const filteredData = data.filter(county => 
+                    const filteredData = data.filter(county =>
                         county.state_name.toLowerCase().includes(stateName.toLowerCase())
                     );
                     populateTable(filteredData);
+                    showLoading(false);
                 })
-                .catch(error => console.error('Error fetching counties:', error));
+                .catch(error => {
+                    showLoading(false);
+                    document.getElementById('errorMessage').innerText = 'Error filtering counties: ' + error.message;
+                    document.getElementById('errorMessage').style.display = 'block';
+                    console.error('Error filtering counties:', error);
+                });
         });
 
         function populateTable(data) {
             const tableBody = document.getElementById('countiesTable').getElementsByTagName('tbody')[0];
             tableBody.innerHTML = ''; 
-            data.forEach(county => {
+            if (data.length === 0) {
                 const row = tableBody.insertRow();
-                const cell1 = row.insertCell(0);
-                const cell2 = row.insertCell(1);
-                cell1.innerHTML = county.state_name;
-                cell2.innerHTML = county.population;
-            });
+                const cell = row.insertCell(0);
+                cell.colSpan = 2;
+                cell.innerHTML = 'No data available';
+            } else {
+                data.forEach(county => {
+                    const row = tableBody.insertRow();
+                    const cell1 = row.insertCell(0);
+                    const cell2 = row.insertCell(1);
+                    cell1.innerHTML = county.state_name;
+                    cell2.innerHTML = county.population;
+                });
+            }
+        }
+
+        function showLoading(isLoading) {
+            const loadingMessage = document.getElementById('loadingMessage');
+            loadingMessage.style.display = isLoading ? 'block' : 'none';
         }
     </script>
 </body>
